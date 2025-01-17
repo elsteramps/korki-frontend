@@ -34,8 +34,8 @@ const app = express();
 const PORT = 5000;
 
 // Token bota Telegrama i ID czatu
-const TELEGRAM_TOKEN = "8178490835:AAH0F7WPS_EqpmeM2jE6nCFDxzBeEUvA9bQ";
-const TELEGRAM_CHAT_ID = "454297472";
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 // Middleware
 app.use(cors());
