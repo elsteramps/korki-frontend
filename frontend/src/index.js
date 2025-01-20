@@ -27,7 +27,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch("https://korki-backend.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -90,7 +90,7 @@ function AdminPanel() {
   
 
   useEffect(() => {
-    fetch("http://localhost:5000/disabled-dates")
+    fetch("https://korki-backend.onrender.com/disabled-dates")
       .then((response) => response.json())
       .then((data) => {
         setDisabledDates({
@@ -115,7 +115,7 @@ function AdminPanel() {
   
     console.log("Przesyłane dane:", payload); // Debugowanie
   
-    fetch("http://localhost:5000/admin/disable-date", {
+    fetch("https://korki-backend.onrender.com/admin/disable-date", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -146,7 +146,7 @@ function AdminPanel() {
   const handleRemove = (date, isFullDay, time = null) => {
     const payload = { date, time };
   
-    fetch("http://localhost:5000/admin/enable-date", {
+    fetch("https://korki-backend.onrender.com/admin/enable-date", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -333,15 +333,18 @@ function Contact() {
     phone: "",
     selectedDate: null,
     message: "",
+    consentEmail: false,
+    consentPhone: false
   });
 
   const [disabledDates, setDisabledDates] = useState({ fullDays: [], hours: {} });
   const [isLoading, setIsLoading] = useState(true); // Zmienna stanu do śledzenia ładowania
   const [key, setKey] = useState(0);
+  const [errors, setErrors] = useState({});
 
 
   useEffect(() => {
-    fetch("http://localhost:5000/disabled-dates")
+    fetch("https://korki-backend.onrender.com/disabled-dates")
       .then((response) => response.json())
       .then((data) => {
         setDisabledDates({
@@ -368,6 +371,21 @@ function Contact() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const newErrors = {};
+    if (!formData.consentEmail) {
+      newErrors.consentEmail = "Musisz wyrazić zgodę na kontakt e-mail.";
+    }
+    if (!formData.consentPhone) {
+      newErrors.consentPhone = "Musisz wyrazić zgodę na kontakt telefoniczny.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+
     console.log({
       name: formData.name,
       email: formData.email,
@@ -375,6 +393,8 @@ function Contact() {
       selectedDate: formData.selectedDate ? `${formData.selectedDate.toLocaleDateString("en-CA")} ${formData.selectedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`
       : null,
       message: formData.message,
+      consentEmail: formData.consentEmail,
+      consentPhone: formData.consentPhone
     });
   
     if (!formData.selectedDate) {
@@ -382,7 +402,7 @@ function Contact() {
       return;
     }
   
-    const response = await fetch("http://localhost:5000/contact", {
+    const response = await fetch("https://korki-backend.onrender.com/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -392,6 +412,8 @@ function Contact() {
         selectedDate: formData.selectedDate ? `${formData.selectedDate.toLocaleDateString("en-CA")} ${formData.selectedDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`
       : null,
         message: formData.message,
+        consentEmail: formData.consentEmail,
+        consentPhone: formData.consentPhone
       }),
     });
   
@@ -493,6 +515,33 @@ function Contact() {
           required
         />
       </label>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={formData.consentEmail}
+            onChange={(e) =>
+              setFormData({ ...formData, consentEmail: e.target.checked })
+            }
+          />
+          Wyrażam zgodę na kontakt e-mail.
+        </label>
+        {errors.consentEmail && <p className="error">{errors.consentEmail}</p>}
+      </div>
+
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={formData.consentPhone}
+            onChange={(e) =>
+              setFormData({ ...formData, consentPhone: e.target.checked })
+            }
+          />
+          Wyrażam zgodę na kontakt telefoniczny.
+        </label>
+        {errors.consentPhone && <p className="error">{errors.consentPhone}</p>}
+      </div>
       <button type="submit">Wyślij</button>
     </form>
   );

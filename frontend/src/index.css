@@ -91,6 +91,12 @@ blockquote {
   border-radius: 8px;
 }
 
+.error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
 .home-cta h2 {
   color: white;
   font-size: 2rem;
