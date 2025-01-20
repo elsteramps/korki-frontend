@@ -293,7 +293,8 @@ function Home() {
       <section className="home-cta">
         <h2>Gotowy na lepsze wyniki?</h2>
         <p>Skontaktuj się z nami i rozpocznij swoją podróż do sukcesu.</p>
-        <a href="/contact" className="cta-button">Skontaktuj się</a>
+        {/* <a href="/contact" className="cta-button">Skontaktuj się</a> */}
+        
       </section>
     </div>
   );
