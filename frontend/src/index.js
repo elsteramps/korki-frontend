@@ -248,24 +248,33 @@ function Home() {
     <div className="home">
       {/* Sekcja powitalna */}
       <header className="home-header">
-        <h1>Witaj na mojej stronie!</h1>
-        <p>Specjalizuję się w korepetycjach z fizyki, pomagając uczniom osiągać lepsze wyniki.</p>
+        <h1>Witaj na naszej  stronie!</h1>
+        <p>Od pięciui lat specjalizujemy się w korepetycjach z fizyki, pomagając uczniom na każdym poziomie osiągać lepsze wyniki!</p>
       </header>
 
       {/* Sekcja opisowa */}
       <section className="home-services">
-        <h2>Dlaczego warto wybrać moje korepetycje?</h2>
+        <h2>Dlaczego warto wybrać nasze korepetycje?</h2>
+        <div className="service-block">
+          <h3>DARMOWA lekcja próbna</h3>
+          <p>Oferujemy darmowe spotkanie, na którym poznamy się i wspólnie określimy cele, których chcesz osiągnąć oraz stworzymy na ich podstawie plan naszych działań, żeby te cele osiągnąć! Spotkanie zazwyczaj trwa nie więcej niż 30 minut.</p>
+        </div>
+        <div className="service-block">
+          <h3>Nowoczesne metody nauczania</h3>
+          <p>Specjalizujemy się przede wszystkim w prowadzeniu lekcji online, i w ciągu pięciu lat zdążyliśmy przekonać wielu ludzi, jakie to jest proste, efektywne, zabawne, a przy okazji, tańsze od tradycyjnych korepetycji z dojazdem, szczególnie w porze zimy! Brrrrr!</p>
+          <p>Na lekcjach będziemy korzystać z prezentacji, gier, tablic interaktywnych, gdzie będziemy mogli wspólnie pracować nad materiałem, a nawet eksperymentów-online!</p>
+        </div>
         <div className="service-block">
           <h3>Indywidualne podejście</h3>
-          <p>Każdy uczeń jest inny, dlatego dostosowuję program nauczania do Twoich potrzeb.</p>
+          <p>Każdy uczeń jest inny, dlatego dostosowujmy program nauczania do Twoich potrzeb.</p>
         </div>
         <div className="service-block">
           <h3>Przygotowanie do matury</h3>
-          <p>Zapewniam kompleksowe przygotowanie do egzaminu maturalnego, koncentrując się na najważniejszych zagadnieniach.</p>
+          <p>Zapewniamy kompleksowe przygotowanie do egzaminu maturalnego, koncentrując się na najważniejszych zagadnieniach.</p>
         </div>
         <div className="service-block">
           <h3>Rozwiązywanie trudnych problemów</h3>
-          <p>Nie ma problemów z fizyki, których nie da się rozwiązać. Razem znajdziemy odpowiedź!</p>
+          <p>Nie ma problemów z fizyki, których nie da się rozwiązać. Razem znajdziemy odpowiedzi na Twoje pytania!</p>
         </div>
       </section>
 
@@ -283,7 +292,7 @@ function Home() {
       {/* Sekcja CTA */}
       <section className="home-cta">
         <h2>Gotowy na lepsze wyniki?</h2>
-        <p>Skontaktuj się ze mną i rozpocznij swoją podróż do sukcesu z fizyki.</p>
+        <p>Skontaktuj się z nami i rozpocznij swoją podróż do sukcesu.</p>
         <a href="/contact" className="cta-button">Skontaktuj się</a>
       </section>
     </div>
@@ -305,21 +314,22 @@ function Services() {
         </thead>
         <tbody>
           <tr>
-            <td>Zajęcia dla szkół średnich</td>
+            <td>Zajęcia dla szkół podstawowych oraz szkół średnich na poziomie podstawowym</td>
             <td>60 minut</td>
-            <td>100 PLN</td>
+            <td>60 PLN*</td>
           </tr>
           <tr>
-            <td>Przygotowanie do matury</td>
-            <td>90 minut</td>
-            <td>150 PLN</td>
+            <td>Szkoła średnia (poziom rozszerzony oraz przygotowanie do matury)</td>
+            <td>60 minut</td>
+            <td>80 PLN*</td>
           </tr>
           <tr>
-            <td>Konsultacje dla studentów</td>
-            <td>120 minut</td>
-            <td>200 PLN</td>
+            <td>Studenci</td>
+            <td>60 minut</td>
+            <td>od 100 PLN*</td>
           </tr>
         </tbody>
+        <p>*Ceny są podane przy odbyciu zajęć online. Istnieje możliwoźć dojazdu do ucznia w granicach województwa Dolnośląskiego. Koszt dojazdu jest zależny od lokalizacji ucznia i jest ustalany indywidualnie</p>
       </table>
     </section>
   );
@@ -418,7 +428,7 @@ function Contact() {
     });
   
     if (response.ok) {
-      alert("Formularz wysłany!");
+      alert("Formularz wysłany! Skontaktujemy się z Państwem najszybciej jak się da!");
     } else {
       const error = await response.json();
       alert(`Błąd: ${error.error}`);
@@ -516,7 +526,8 @@ function Contact() {
         />
       </label>
       <div>
-        <label>
+        <label className="checkbox-group">
+        Wyrażam zgodę na kontakt e-mail.
           <input
             type="checkbox"
             checked={formData.consentEmail}
@@ -524,13 +535,13 @@ function Contact() {
               setFormData({ ...formData, consentEmail: e.target.checked })
             }
           />
-          Wyrażam zgodę na kontakt e-mail.
         </label>
         {errors.consentEmail && <p className="error">{errors.consentEmail}</p>}
       </div>
 
       <div>
-        <label>
+        <label className="checkbox-group">
+        Wyrażam zgodę na kontakt telefoniczny.
           <input
             type="checkbox"
             checked={formData.consentPhone}
@@ -538,7 +549,6 @@ function Contact() {
               setFormData({ ...formData, consentPhone: e.target.checked })
             }
           />
-          Wyrażam zgodę na kontakt telefoniczny.
         </label>
         {errors.consentPhone && <p className="error">{errors.consentPhone}</p>}
       </div>

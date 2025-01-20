@@ -33,6 +33,7 @@ body {
 
 .home-header p {
   font-size: 1.2rem;
+  color: black;
 }
 
 .home-services {
@@ -129,6 +130,19 @@ header {
   color: white;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-group {
+  max-width: 3 rem;
+  display: flex;
+  justify-content: space-between; /* Wyrównuje checkbox i tekst w pionie */
+  margin-bottom: 10px; /* Odstęp między liniami */
+}
+
+/* Styl samego checkboxa */
+.checkbox-group input[type="checkbox"] {
+  margin-right: 80px; /* Odstęp między checkboxem a tekstem */
+  width: min-content;
 }
 
 nav ul {
