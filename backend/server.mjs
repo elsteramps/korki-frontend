@@ -121,7 +121,7 @@ app.post("/admin/enable-date", (req, res) => {
 
 // Endpoint do obsługi formularza
 app.post("/contact", async (req, res) => {
-  const { name, email, phone, selectedDate, message } = req.body;
+  const { name, email, phone, selectedDate, message, consentEmail, consentPhone } = req.body;
 
   if (!selectedDate) {
     return res.status(400).json({ error: "Data i godzina są wymagane." });
