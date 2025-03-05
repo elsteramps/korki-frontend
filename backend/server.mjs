@@ -197,7 +197,7 @@ ${message}`;
       body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
     });
 
-    await sendConfirmationEmail(email, name, localDate, localTime);
+    // await sendConfirmationEmail(email, name, localDate, localTime);
 
     res.status(200).json({ message: "Formularz został wysłany pomyślnie!" });
   } catch (error) {
