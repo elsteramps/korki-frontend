@@ -20,8 +20,8 @@ const sendConfirmationEmail = async (to, name, date, time) => {
         <li>📅 <strong>Data:</strong> ${date}</li>
         <li>⏰ <strong>Godzina:</strong> ${time}</li>
       </ul>
-      <p>Jeśli masz pytania, skontaktuj się z nami.</p>
-      <p>Pozdrawiamy,<br><strong>Zespół Twoich Korepetycji</strong></p>
+      <p>Jeśli masz pytania, skontaktuj się z nami pod nr telefonu: 573254629, albo napisz swoje pytanie, odpowiadając na tego maila!</p>
+      <p>Pozdrawiam, Iwan z sorokokorki.pl</p>
     `,
   };
 
@@ -67,22 +67,21 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 app.use(cors());
 app.use(bodyParser.json());
 
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-
 dotenv.config();
 
 // Ustawienia serwera SMTP Twojego hostingu
 const transporter = nodemailer.createTransport({
-  host: "smtp.elsteramps.beep.pl ", // Zmień na swój hosting
+  host: "smtp.elsteramps.beep.pl", // Zmień na swój hosting
   port: 587, // Użyj 465 dla SSL lub 587 dla TLS
-  secure: true, // Ustaw na true dla SSL, false dla TLS
+  secure: false, // Ustaw na true dla SSL, false dla TLS
   auth: {
     user: process.env.SMTP_USER, // Twój adres e-mail np. kontakt@domena.pl
     pass: process.env.SMTP_PASS, // Hasło do skrzynki e-mail
   },
+  authMethod: "LOGIN",
   tls: {
     rejectUnauthorized: false, // Niektóre hostingi wymagają tej opcji
+    minVersion: "TLSv1.2",
   },
 });
 
@@ -197,6 +196,8 @@ ${message}`;
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
     });
+
+    await sendConfirmationEmail(email, name, localDate, localTime);
 
     res.status(200).json({ message: "Formularz został wysłany pomyślnie!" });
   } catch (error) {
