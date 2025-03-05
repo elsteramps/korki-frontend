@@ -4,8 +4,34 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
+
+const sendConfirmationEmail = async (to, name, date, time) => {
+  const mailOptions = {
+    from: `"Twoje Korepetycje" <${process.env.SMTP_USER}>`,
+    to,
+    subject: "Potwierdzenie rezerwacji lekcji",
+    html: `
+      <h2>Cześć ${name},</h2>
+      <p>Dziękujemy za rezerwację lekcji. Oto szczegóły:</p>
+      <ul>
+        <li>📅 <strong>Data:</strong> ${date}</li>
+        <li>⏰ <strong>Godzina:</strong> ${time}</li>
+      </ul>
+      <p>Jeśli masz pytania, skontaktuj się z nami.</p>
+      <p>Pozdrawiamy,<br><strong>Zespół Twoich Korepetycji</strong></p>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`E-mail wysłany do: ${to}`);
+  } catch (error) {
+    console.error("Błąd wysyłania e-maila:", error);
+  }
+};
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"]; // Pobierz nagłówek Authorization
@@ -40,6 +66,25 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// Ustawienia serwera SMTP Twojego hostingu
+const transporter = nodemailer.createTransport({
+  host: "smtp.elsteramps.beep.pl ", // Zmień na swój hosting
+  port: 587, // Użyj 465 dla SSL lub 587 dla TLS
+  secure: true, // Ustaw na true dla SSL, false dla TLS
+  auth: {
+    user: process.env.SMTP_USER, // Twój adres e-mail np. kontakt@domena.pl
+    pass: process.env.SMTP_PASS, // Hasło do skrzynki e-mail
+  },
+  tls: {
+    rejectUnauthorized: false, // Niektóre hostingi wymagają tej opcji
+  },
+});
 
 const disabledDates = {
   fullDays: [], // Tablica pełnych dni, np. ["2025-01-15"]
