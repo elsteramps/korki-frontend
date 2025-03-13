@@ -10,7 +10,7 @@ const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak pr
 
 const sendConfirmationEmail = async (to, name, date, time) => {
   const mailOptions = {
-    from: `"Twoje Korepetycje" <${process.env.SMTP_USER}>`,
+    from: `SorokoKorki <${process.env.SMTP_USER}>`,
     to,
     subject: "Potwierdzenie rezerwacji lekcji",
     html: `
