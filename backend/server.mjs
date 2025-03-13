@@ -71,9 +71,9 @@ dotenv.config();
 
 // Ustawienia serwera SMTP Twojego hostingu
 const transporter = nodemailer.createTransport({
-  host: "smtp.elsteramps.beep.pl", // Zmień na swój hosting
-  port: 587, // Użyj 465 dla SSL lub 587 dla TLS
-  secure: false, // Ustaw na true dla SSL, false dla TLS
+  host: "mail-serwer342694.lh.pl", // Zmień na swój hosting
+  port: 465, // Użyj 465 dla SSL lub 587 dla TLS
+  secure: true, // Ustaw na true dla SSL, false dla TLS
   auth: {
     user: process.env.SMTP_USER, // Twój adres e-mail np. kontakt@domena.pl
     pass: process.env.SMTP_PASS, // Hasło do skrzynki e-mail
@@ -197,7 +197,7 @@ ${message}`;
       body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text }),
     });
 
-    // await sendConfirmationEmail(email, name, localDate, localTime);
+    await sendConfirmationEmail(email, name, localDate, localTime);
 
     res.status(200).json({ message: "Formularz został wysłany pomyślnie!" });
   } catch (error) {
