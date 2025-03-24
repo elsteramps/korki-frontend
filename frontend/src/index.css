@@ -1,0 +1,285 @@
+/* Współczesna stylizacja strony z wykorzystaniem nowoczesnych trendów */
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9fafc;
+  color: #2e3a59;
+  line-height: 1.7;
+}
+
+/* Home.css */
+
+.home {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  padding: 20px;
+  color: #333;
+}
+
+.home-header {
+  text-align: center;
+  padding: 20px;
+  background: #f0f8ff;
+  border-radius: 8px;
+  margin-bottom: 40px;
+}
+
+.home-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: #0056b3;
+}
+
+.home-header p {
+  font-size: 1.2rem;
+  color: black;
+}
+
+.home-services {
+  margin-bottom: 40px;
+}
+
+.home-services h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.service-block {
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.service-block h3 {
+  font-size: 1.5rem;
+  color: #0056b3;
+}
+
+.service-block p {
+  font-size: 1rem;
+}
+
+.home-testimonials {
+  margin-bottom: 40px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.home-testimonials h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+blockquote {
+  font-size: 1.2rem;
+  font-style: italic;
+  margin: 20px auto;
+  color: #666;
+}
+
+.home-cta {
+  text-align: center;
+  padding: 20px;
+  background: #0056b3;
+  color: white;
+  border-radius: 8px;
+}
+
+.error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.home-cta h2 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.home-cta p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.cta-button {
+  background: #ffcc00;
+  color: #333;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.cta-button:hover {
+  background: #ff9900;
+  color: white;
+}
+
+header {
+  background-color: #1e40af;
+  padding: 20px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-group {
+  max-width: 3 rem;
+  display: flex;
+  justify-content: space-between; /* Wyrównuje checkbox i tekst w pionie */
+  margin-bottom: 10px; /* Odstęp między liniami */
+}
+
+/* Styl samego checkboxa */
+.checkbox-group input[type="checkbox"] {
+  margin-right: 80px; /* Odstęp między checkboxem a tekstem */
+  width: min-content;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+nav ul li {
+  display: inline;
+}
+
+nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+nav ul li a:hover {
+  color: #60a5fa;
+}
+
+main {
+  padding: 30px;
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+section {
+  margin-bottom: 40px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+section h1, section h2 {
+  color: #1e40af;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+section p {
+  margin-bottom: 15px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  margin: auto;
+  background: #f1f5f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+  font-weight: bold;
+}
+
+form input, form textarea {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f9fafc;
+}
+
+form input:focus, form textarea:focus {
+  border-color: #60a5fa;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+}
+
+form button {
+  padding: 12px;
+  font-size: 16px;
+  color: white;
+  background-color: #1e40af;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: #3749a8;
+}
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e293b;
+  color: white;
+  text-align: center;
+  padding: 20px 0 20px 0;
+  bottom: 0;
+  width: 100%;
+  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+footer p {
+  font-size: 14px;
+}
+
+/* Stylizacja tabelki w sekcji usług */
+.services-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.services-table th, .services-table td {
+  border: 1px solid #cbd5e1;
+  padding: 12px;
+  text-align: left;
+}
+
+.services-table th {
+  background-color: #1e40af;
+  color: white;
+  font-weight: 700;
+}
+
+.services-table tr:nth-child(even) {
+  background-color: #f1f5f9;
+}
+
+.services-table tr:hover {
+  background-color: #e2e8f0;
+}
