@@ -229,6 +229,21 @@ function AdminPanel() {
 
 // Komponent Header
 function Header() {
+
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    // Dodaj data-theme do elementu html
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // Opcjonalnie: zapisz motyw w localStorage
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+// Dodaj przycisk w headerze:
   return (
     <header>
       <nav>
@@ -238,6 +253,9 @@ function Header() {
           <li><Link to="/contact">Kontakt</Link></li>
         </ul>
       </nav>
+      {/* <button onClick={toggleTheme} className="theme-toggle">
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button> */}
     </header>
   );
 }
@@ -248,13 +266,13 @@ function Home() {
     <div className="home">
       {/* Sekcja powitalna */}
       <header className="home-header">
-        <h1>Witaj na naszej  stronie!</h1>
-        <p>Od pięciui lat specjalizujemy się w korepetycjach z fizyki, pomagając uczniom na każdym poziomie osiągać lepsze wyniki!</p>
+        <h1>Korepetycje z fizyki i matematyki dla szkół podstawowych, liceum, technikum oraz studentów uczelni</h1>
+        <p>Od pięciui lat specjalizujemy się w korepetycjach z fizyki i matematyki, pomagając uczniom na każdym poziomie osiągać lepsze wyniki!</p>
       </header>
 
       {/* Sekcja opisowa */}
       <section className="home-services">
-        <h2>Dlaczego warto wybrać nasze korepetycje?</h2>
+        <h2>Dlaczego warto wybrać nas?</h2>
         <div className="service-block">
           <h3>DARMOWA lekcja próbna</h3>
           <p>Oferujemy darmowe spotkanie, na którym poznamy się i wspólnie określimy cele, których chcesz osiągnąć oraz stworzymy na ich podstawie plan naszych działań, żeby te cele osiągnąć! Spotkanie zazwyczaj trwa nie więcej niż 30 minut.</p>
@@ -270,11 +288,11 @@ function Home() {
         </div>
         <div className="service-block">
           <h3>Przygotowanie do matury</h3>
-          <p>Zapewniamy kompleksowe przygotowanie do egzaminu maturalnego, koncentrując się na najważniejszych zagadnieniach.</p>
+          <p>Zapewniamy kompleksowe przygotowanie do egzaminu maturalnego z fizyki, koncentrując się na najważniejszych zagadnieniach.</p>
         </div>
         <div className="service-block">
           <h3>Rozwiązywanie trudnych problemów</h3>
-          <p>Nie ma problemów z fizyki, których nie da się rozwiązać. Razem znajdziemy odpowiedzi na Twoje pytania!</p>
+          <p>Nie ma problemów, których nie da się rozwiązać. Razem znajdziemy odpowiedzi na Twoje pytania!</p>
         </div>
       </section>
 
@@ -293,8 +311,21 @@ function Home() {
       <section className="home-cta">
         <h2>Gotowy na lepsze wyniki?</h2>
         <p>Skontaktuj się z nami i rozpocznij swoją podróż do sukcesu.</p>
-        <a href="/contact" className="cta-button">Skontaktuj się</a>
+        {/* <a href="/contact" className="cta-button">Skontaktuj się</a> */}
+        <Link to="/contact" className="cta-button">Skontaktuj się</Link>
       </section>
+    </div>
+  );
+}
+
+function ThankYou() {
+  return (
+    <div style={{ textAlign: "center", padding: "50px" }}>
+      <h1>Dziękujemy za rezerwację!</h1>
+      <p>Otrzymaliśmy Twoją wiadomość i wkrótce się z Tobą skontaktujemy.</p>
+      <Link to="/" style={{ textDecoration: "none", fontSize: "18px", color: "#007BFF" }}>
+        Wróć na stronę główną
+      </Link>
     </div>
   );
 }
@@ -337,6 +368,8 @@ function Services() {
 
 // Komponent Contact
 function Contact() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -380,6 +413,7 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    navigate("/thank-you");
 
     const newErrors = {};
     if (!formData.consentEmail) {
@@ -428,12 +462,12 @@ function Contact() {
     });
   
     if (response.ok) {
-      alert("Formularz wysłany! Skontaktujemy się z Państwem najszybciej jak się da!");
     } else {
       const error = await response.json();
       alert(`Błąd: ${error.error}`);
     }
   };
+  
   
 
   return (
@@ -600,6 +634,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/thank-you" element={<ThankYou />} />
           </Routes>
         </main>
         <Footer />

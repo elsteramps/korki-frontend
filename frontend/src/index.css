@@ -1,11 +1,29 @@
 /* Współczesna stylizacja strony z wykorzystaniem nowoczesnych trendów */
+/* Zmienne CSS dla motywów */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #2e3a59;
+  --primary-color: #1e40af;
+}
+
+[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --primary-color: #60a5fa;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f9fafc;
-  color: #2e3a59;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   line-height: 1.7;
+}
+
+header {
+  background: rgba(30, 64, 175, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 /* Home.css */
@@ -20,7 +38,7 @@ body {
 .home-header {
   text-align: center;
   padding: 20px;
-  background: #f0f8ff;
+  background-color: var(--bg-color);
   border-radius: 8px;
   margin-bottom: 40px;
 }
@@ -33,11 +51,13 @@ body {
 
 .home-header p {
   font-size: 1.2rem;
-  color: black;
+  color: var(--text-color);
 }
 
 .home-services {
   margin-bottom: 40px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .home-services h2 {
@@ -48,7 +68,7 @@ body {
 
 .service-block {
   margin-bottom: 20px;
-  background: #fff;
+  background-color: var(--bg-color);
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 20px;
@@ -57,7 +77,7 @@ body {
 
 .service-block h3 {
   font-size: 1.5rem;
-  color: #0056b3;
+  color: var(--text-color);
 }
 
 .service-block p {
@@ -67,7 +87,7 @@ body {
 .home-testimonials {
   margin-bottom: 40px;
   padding: 20px;
-  background: #f9f9f9;
+  background-color: var(--bg-color);
   border-radius: 8px;
   text-align: center;
 }
@@ -81,14 +101,14 @@ blockquote {
   font-size: 1.2rem;
   font-style: italic;
   margin: 20px auto;
-  color: #666;
+  color: var(--text-color);
 }
 
 .home-cta {
   text-align: center;
   padding: 20px;
-  background: #0056b3;
-  color: white;
+  background-color: #1e40af;
+  color: var(--text-color);
   border-radius: 8px;
 }
 
@@ -99,7 +119,7 @@ blockquote {
 }
 
 .home-cta h2 {
-  color: white;
+  color: #fff;
   font-size: 2rem;
   margin-bottom: 10px;
 }
@@ -107,6 +127,7 @@ blockquote {
 .home-cta p {
   font-size: 1.2rem;
   margin-bottom: 20px;
+  color: #fff;
 }
 
 .cta-button {
@@ -199,7 +220,8 @@ form {
   gap: 20px;
   max-width: 600px;
   margin: auto;
-  background: #f1f5f9;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -216,7 +238,7 @@ form input, form textarea {
   border-radius: 8px;
   width: 100%;
   box-sizing: border-box;
-  background-color: #f9fafc;
+  background-color: var(--bg-color);
 }
 
 form input:focus, form textarea:focus {
@@ -257,29 +279,37 @@ footer p {
   font-size: 14px;
 }
 
+#services{
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
 /* Stylizacja tabelki w sekcji usług */
 .services-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  background-color: var(--bg-color);
 }
 
 .services-table th, .services-table td {
   border: 1px solid #cbd5e1;
   padding: 12px;
   text-align: left;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .services-table th {
-  background-color: #1e40af;
-  color: white;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   font-weight: 700;
 }
 
-.services-table tr:nth-child(even) {
-  background-color: #f1f5f9;
+button, .cta-button {
+  transition: background-color 0.3s, transform 0.2s;
 }
 
-.services-table tr:hover {
-  background-color: #e2e8f0;
+button:hover, .cta-button:hover {
+  transform: translateY(-2px);
 }
