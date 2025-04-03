@@ -39,8 +39,9 @@ const sendConfirmationEmail = async (to, name, date, time) => {
           <li><strong>📅 Data:</strong> ${date}</li>
           <li><strong>⏰ Godzina:</strong> ${time}</li>
         </ul>
-        <p>W razie pytań, napisz do nas :)</p>
-        <p>Pozdrawiamy,<br><strong>Zespół Twoich Korepetycji</strong></p>
+        <p>W razie jakichkolwiek pytań proszę odpowiedzieć na tego maila. Jeśteśmy również do dyspozycji pod numerem telefonu <strong>573254629</strong></p>
+
+        <p>Pozdrawiam,<br><strong>Iwan z SorokoKorki</strong></p>
       `,
     });
 
