@@ -5,10 +5,12 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import { google } from "googleapis";
-import fs from "fs";
+import { Resend } from "resend";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
+
+
+dotenv.config();
 
 // const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 // const credentials = JSON.parse(fs.readFileSync("soy-reporter-341221-68f28652be33.json", "utf-8"));
@@ -22,28 +24,33 @@ const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak pr
 
 // const calendar = google.calendar({ version: "v3", auth });
 
-const sendConfirmationEmail = async (to, name, date, time) => {
-  const mailOptions = {
-    from: `SorokoKorki <${process.env.SMTP_USER}>`,
-    to,
-    subject: "Potwierdzenie rezerwacji lekcji",
-    html: `
-      <h2>Cześć ${name},</h2>
-      <p>Dziękujemy za rezerwację lekcji. Oto szczegóły:</p>
-      <ul>
-        <li>📅 <strong>Data:</strong> ${date}</li>
-        <li>⏰ <strong>Godzina:</strong> ${time}</li>
-      </ul>
-      <p>Jeśli masz pytania, skontaktuj się z nami pod nr telefonu: 573254629, albo napisz swoje pytanie, odpowiadając na tego maila!</p>
-      <p>Pozdrawiam, Iwan z sorokokorki.com.pl</p>
-    `,
-  };
+const resend = new Resend(process.env.RESEND_API_KEY);
 
+const sendConfirmationEmail = async (to, name, date, time) => {
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`E-mail wysłany do: ${to}`);
-  } catch (error) {
-    console.error("Błąd wysyłania e-maila:", error);
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject: "Potwierdzenie rezerwacji lekcji",
+      html: `
+        <h2>Cześć ${name},</h2>
+        <p>Dziękujemy za rezerwację lekcji!</p>
+        <ul>
+          <li><strong>📅 Data:</strong> ${date}</li>
+          <li><strong>⏰ Godzina:</strong> ${time}</li>
+        </ul>
+        <p>W razie pytań, napisz do nas :)</p>
+        <p>Pozdrawiamy,<br><strong>Zespół Twoich Korepetycji</strong></p>
+      `,
+    });
+
+    if (error) {
+      console.error("❌ Błąd wysyłki Resend:", error);
+    } else {
+      console.log(`✔️ E-mail wysłany przez Resend do: ${to}`);
+    }
+  } catch (err) {
+    console.error("❌ Błąd ogólny wysyłania e-maila:", err);
   }
 };
 
@@ -67,9 +74,6 @@ function authenticateToken(req, res, next) {
 
 export default authenticateToken;
 
-
-dotenv.config();
-
 const app = express();
 const PORT = 5000;
 
@@ -80,8 +84,6 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-
-dotenv.config();
 
 // const createGoogleMeet = async (name, date, time) => {
 //   const eventStartTime = new Date(`${date}T${time}:00`);
@@ -118,22 +120,6 @@ dotenv.config();
 //     return null;
 //   }
 // };
-
-// Ustawienia serwera SMTP Twojego hostingu
-const transporter = nodemailer.createTransport({
-  host: "mail-serwer342694.lh.pl", // Zmień na swój hosting
-  port: 465, // Użyj 465 dla SSL lub 587 dla TLS
-  secure: true, // Ustaw na true dla SSL, false dla TLS
-  auth: {
-    user: process.env.SMTP_USER, // Twój adres e-mail np. kontakt@domena.pl
-    pass: process.env.SMTP_PASS, // Hasło do skrzynki e-mail
-  },
-  authMethod: "LOGIN",
-  tls: {
-    rejectUnauthorized: false, // Niektóre hostingi wymagają tej opcji
-    minVersion: "TLSv1.2",
-  },
-});
 
 const disabledDates = {
   fullDays: [], // Tablica pełnych dni, np. ["2025-01-15"]
