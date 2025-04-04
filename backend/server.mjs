@@ -4,7 +4,6 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import { Resend } from "resend";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
