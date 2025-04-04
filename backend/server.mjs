@@ -41,7 +41,7 @@ const sendConfirmationEmail = async (to, name, date, time) => {
         </ul>
         <p>W razie jakichkolwiek pytań proszę odpowiedzieć na tego maila. Jeśteśmy również do dyspozycji pod numerem telefonu <strong>573254629</strong></p>
 
-        <p>Pozdrawiam,<br><strong>Iwan z SorokoKorki</strong></p>
+        <p>Pozdrawiam,<br>Iwan z <strong>SorokoKorki</strong></p>
       `,
     });
 

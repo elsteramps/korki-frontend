@@ -27,7 +27,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("https://korki-backend.onrender.com/login", {
+      const response = await fetch("https://api.sorokokorki.com.pl/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -90,7 +90,7 @@ function AdminPanel() {
   
 
   useEffect(() => {
-    fetch("https://korki-backend.onrender.com/disabled-dates")
+    fetch("https://api.sorokokorki.com.pl/disabled-dates")
       .then((response) => response.json())
       .then((data) => {
         setDisabledDates({
@@ -115,7 +115,7 @@ function AdminPanel() {
   
     console.log("Przesyłane dane:", payload); // Debugowanie
   
-    fetch("https://korki-backend.onrender.com/admin/disable-date", {
+    fetch("https://api.sorokokorki.com.pl/admin/disable-date", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -146,7 +146,7 @@ function AdminPanel() {
   const handleRemove = (date, isFullDay, time = null) => {
     const payload = { date, time };
   
-    fetch("https://korki-backend.onrender.com/admin/enable-date", {
+    fetch("https://api.sorokokorki.com.pl/admin/enable-date", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -387,7 +387,7 @@ function Contact() {
 
 
   useEffect(() => {
-    fetch("https://korki-backend.onrender.com/disabled-dates")
+    fetch("https://api.sorokokorki.com.pl/contact")
       .then((response) => response.json())
       .then((data) => {
         setDisabledDates({
@@ -446,7 +446,7 @@ function Contact() {
       return;
     }
   
-    const response = await fetch("https://korki-backend.onrender.com/contact", {
+    const response = await fetch("https://api.sorokokorki.com.pl/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
