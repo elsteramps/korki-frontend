@@ -13,11 +13,13 @@
   "dependencies": {
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "git-filter-repo": "^0.0.30",
     "googleapis": "^146.0.0",
     "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",
     "resend": "^4.2.0"

@@ -5,12 +5,43 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { Resend } from "resend";
+import mysql from "mysql2/promise";
+import crypto from "crypto";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
 
 
 dotenv.config();
 
+const db = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASS,
+  database: process.env.MYSQL_DB,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.padEnd(32, 'x');
+const IV_LENGTH = 16;
+
+const encrypt = (text) => {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  return iv.toString("hex") + ":" + encrypted;
+};
+
+const decrypt = (data) => {
+  const [ivHex, encryptedData] = data.split(":");
+  const iv = Buffer.from(ivHex, "hex");
+  const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(ENCRYPTION_KEY), iv);
+  let decrypted = decipher.update(encryptedData, "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
+};
 // const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 // const credentials = JSON.parse(fs.readFileSync("soy-reporter-341221-68f28652be33.json", "utf-8"));
 
@@ -175,6 +206,25 @@ app.post("/admin/disable-date", (req, res) => {
   res.status(200).json({ message: "Termin został dodany jako niedostępny." });
 });
 
+app.get("/admin/clients", async (req, res) => {
+  try {
+    const [rows] = await db.execute("SELECT * FROM clients ORDER BY created_at DESC");
+    const decrypted = rows.map((row) => ({
+      id: row.id,
+      name: decrypt(row.name),
+      email: decrypt(row.email),
+      phone: decrypt(row.phone),
+      date: decrypt(row.date),
+      message: decrypt(row.message),
+      created_at: row.created_at,
+    }));
+    res.json(decrypted);
+  } catch (err) {
+    console.error("Błąd podczas pobierania danych:", err);
+    res.status(500).json({ error: "Błąd serwera" });
+  }
+});
+
 
 
 // Endpoint: Usuń niedostępny termin
@@ -197,11 +247,25 @@ app.post("/admin/enable-date", (req, res) => {
   res.status(200).json({ message: "Termin został usunięty." });
 });
 
+app.get("/test-db-insert", async (req, res) => {
+  try {
+    await db.execute(
+      `INSERT INTO clients (name, email, phone, date, message) VALUES (?, ?, ?, ?, ?)`,
+      ["TEST", "test@test.pl", "123456789", "01-01-2025", "To jest test"]
+    );
+    res.send("✔️ Testowy wpis dodany");
+  } catch (error) {
+    console.error("❌ Błąd testowego INSERTA:", error.message);
+    res.status(500).send("❌ Nie udało się dodać testowego wpisu");
+  }
+});
+
+
 
 
 // Endpoint do obsługi formularza
 app.post("/contact", async (req, res) => {
-  const { name, email, phone, selectedDate, message, consentEmail, consentPhone } = req.body;
+  const { name, email, phone, selectedDate, message } = req.body;
 
   if (!selectedDate) {
     return res.status(400).json({ error: "Data i godzina są wymagane." });
@@ -240,6 +304,21 @@ ${message}`;
     // const meetLink = await createGoogleMeet(name, localDate, localTime);
 
     await sendConfirmationEmail(email, name, localDate, localTime);
+
+    console.log("➡️ Próba zapisu do bazy...");
+
+    await db.execute(
+      `INSERT INTO clients (name, email, phone, date, message) VALUES (?, ?, ?, ?, ?)`,
+      [
+        encrypt(name),
+        encrypt(email),
+        encrypt(phone),
+        encrypt(localDate + " " + localTime),
+        encrypt(message),
+      ]
+    );
+    
+    console.log("✅ Dane zapisane!");
 
     res.status(200).json({ message: "Formularz został wysłany pomyślnie!" });
   } catch (error) {
