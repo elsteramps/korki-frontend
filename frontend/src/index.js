@@ -253,7 +253,11 @@ function Header() {
   };
 // Dodaj przycisk w headerze:
   return (
-    <header>
+    <header className="main-header">
+      <div className="header-wrapper">
+      <Link to="/">
+          <img src="/bird.png" alt="Logo" className="header-logo" />
+      </Link>
       <nav>
         <ul>
           <li><Link to="/">Strona główna</Link></li>
@@ -264,6 +268,7 @@ function Header() {
       {/* <button onClick={toggleTheme} className="theme-toggle">
         {theme === 'light' ? '🌙' : '☀️'}
       </button> */}
+      </div>
     </header>
   );
 }

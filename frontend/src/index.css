@@ -27,6 +27,25 @@ header {
   backdrop-filter: blur(10px);
 }
 
+.main-header {
+  background-color: #1e40af;
+  padding: 15px 30px;
+}
+
+.header-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  height: 48px;
+  width: auto;
+  margin-right: 20px;
+  border-radius: 10px;
+}
+
+
 /* Home.css */
 
 .home {
