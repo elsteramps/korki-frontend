@@ -1,5 +1,6 @@
 /* Współczesna stylizacja strony z wykorzystaniem nowoczesnych trendów */
 /* Zmienne CSS dla motywów */
+
 :root {
   --bg-color: #ffffff;
   --text-color: #2e3a59;
@@ -29,6 +30,7 @@ header {
 /* Home.css */
 
 .home {
+  position: static;
   font-family: Arial, sans-serif;
   line-height: 1.6;
   padding: 20px;
@@ -315,3 +317,73 @@ button, .cta-button {
 button:hover, .cta-button:hover {
   transform: translateY(-2px);
 }
+
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh; /* <-- ważne */
+  overflow-y: auto;  /* <-- pozwala scrollować */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: popup-fade-in 0.3s ease-out;
+}
+
+.popup-closing {
+  animation: popup-fade-out 0.3s ease-in forwards;
+}
+
+@keyframes popup-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popup-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+
+.popup-heading {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: var(--text-color);
+  text-align: center;
+}
+
+.popup-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+

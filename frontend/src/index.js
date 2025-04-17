@@ -1,5 +1,6 @@
 // Importy React i biblioteki CSS
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactDOM from "react-dom/client";
 import { useNavigate, Navigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
@@ -221,6 +222,13 @@ function AdminPanel() {
           </ul>
         </div>
       ))}
+        <ul>
+        <li>
+          <Link to="/admin/clients" className="text-blue-600 hover:underline">
+            Zobacz listę klientów
+          </Link>
+        </li>
+        </ul>
       <button onClick={handleLogout}>Wyloguj</button>
     </div>
   );  
@@ -260,10 +268,41 @@ function Header() {
   );
 }
 
+const ContactPopup = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => setIsVisible(false), 300); // musi być równe długości animacji
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="popup-overlay">
+      <div className={`popup-content ${isClosing ? "popup-closing" : ""}`}>
+        <button className="popup-close" onClick={handleClose}>
+          &times;
+        </button>
+        <h2 className="popup-heading">Umów się na lekcję</h2>
+        <Contact />
+      </div>
+    </div>
+  );
+};
+
+
+
 // Komponent Home
 function Home() {
   return (
-    <div className="home">
+    <div className="home relative">
       {/* Sekcja powitalna */}
       <header className="home-header">
         <h1>Korepetycje z fizyki i matematyki dla szkół podstawowych, liceum, technikum oraz studentów uczelni</h1>
@@ -314,6 +353,7 @@ function Home() {
         {/* <a href="/contact" className="cta-button">Skontaktuj się</a> */}
         <Link to="/contact" className="cta-button">Skontaktuj się</Link>
       </section>
+      <ContactPopup/>
     </div>
   );
 }
@@ -326,6 +366,68 @@ function ThankYou() {
       <Link to="/" style={{ textDecoration: "none", fontSize: "18px", color: "#007BFF" }}>
         Wróć na stronę główną
       </Link>
+    </div>
+  );
+}
+
+function ClientList() {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const res = await fetch("https://api.sorokokorki.com.pl/admin/clients");
+        const data = await res.json();
+        setClients(data);
+      } catch (err) {
+        setError("Błąd podczas ładowania danych.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
+
+  if (loading) return <p>Wczytywanie danych...</p>;
+  if (error) return <p>{error}</p>;
+
+  return (
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Lista klientów</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-2 border">ID</th>
+              <th className="px-4 py-2 border">Imię</th>
+              <th className="px-4 py-2 border">E-mail</th>
+              <th className="px-4 py-2 border">Telefon</th>
+              <th className="px-4 py-2 border">Data</th>
+              <th className="px-4 py-2 border">Wiadomość</th>
+              <th className="px-4 py-2 border">Złożono</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clients.map((client) => (
+              <tr key={client.id} className="hover:bg-gray-50">
+                <td className="px-4 py-2 border text-center">{client.id}</td>
+                <td className="px-4 py-2 border">{client.name}</td>
+                <td className="px-4 py-2 border">{client.email}</td>
+                <td className="px-4 py-2 border">{client.phone}</td>
+                <td className="px-4 py-2 border">{client.date}</td>
+                <td className="px-4 py-2 border">{client.message}</td>
+                <td className="px-4 py-2 border text-sm text-gray-500">
+                  {new Date(client.created_at).toLocaleString("pl-PL")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -631,6 +733,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+            path="/admin/clients"
+            element={
+              <ProtectedRoute>
+                <ClientList />
+              </ProtectedRoute>
+            }
+          />
             <Route path="/services" element={<Services />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/reviews" element={<Reviews />} />
