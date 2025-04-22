@@ -248,6 +248,11 @@ form {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+form h2{
+  color: var(--primary-color);
+  text-align: center;
+}
+
 form label {
   font-weight: bold;
 }
@@ -305,6 +310,10 @@ footer p {
 #services{
   background-color: var(--bg-color);
   color: var(--text-color);
+}
+
+#services h2{
+  text-align: center;
 }
 
 /* Stylizacja tabelki w sekcji usług */
