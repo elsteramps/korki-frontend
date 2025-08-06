@@ -112,6 +112,31 @@ function Contact() {
     return (
       <form onSubmit={handleSubmit}>
         <h2>Zarezerwuj swoją pierwszą lekcję już teraz! Wypełnij formularz!</h2>
+        {/* Baner promocyjny */}
+    <div
+      style={{
+        backgroundColor: "#ffe0e0",
+        color: "#b30000",
+        padding: "12px",
+        borderRadius: "8px",
+        fontWeight: "bold",
+        marginBottom: "20px",
+        textAlign: "center",
+      }}
+    >
+      🎉 Skorzystaj z promocji! Do końca września obowiązują ceny z poprzedniego sezonu 🎉
+    </div>
+
+    <label>
+      Imię:
+      <input
+        type="text"
+        name="name"
+        value={formData.name}
+        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        required
+      />
+    </label>
         <label>
           Imię:
           <input
