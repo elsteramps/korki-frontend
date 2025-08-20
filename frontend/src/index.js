@@ -1,5 +1,5 @@
 // Importy React i biblioteki CSS
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import "./index.css";
@@ -14,6 +14,8 @@ import ClientList from "./components/ClientsList";
 import Services from "./components/Services";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import CookieConsent from "./components/CookieConsent";
 
 
 // Komponent Reviews
@@ -27,8 +29,25 @@ import Footer from "./components/Footer";
 //   );
 // }
 
+
+
 // Główny komponent aplikacji
 function App() {
+
+  const [consent, setConsent] = useState({ necessary: true, analytics: false, marketing: false });
+
+  useEffect(() => {
+    // Przykład: włącz GA dopiero po zgodzie "analytics"
+    if (consent.analytics && !window.__gaLoaded) {
+      const s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-7DVJBE9DNM';
+      s.async = true;
+      document.head.appendChild(s);
+      window.__gaLoaded = true;
+    }
+
+    }, [consent]);
+
   return (
     <Router>
       <div>
@@ -57,9 +76,11 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/polityka-prywatnosci" element={<PrivacyPolicy/>}/>
           </Routes>
         </main>
         <Footer />
+        <CookieConsent onChange={setConsent} />
       </div>
     </Router>
   );

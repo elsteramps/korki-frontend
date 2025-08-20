@@ -45,6 +45,33 @@ header {
   border-radius: 10px;
 }
 
+/*coockie*/
+
+.cookie-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 99999;
+}
+.cookie-card {
+  width: min(680px, 92vw);
+  background: #fff; color: #0f172a;
+  padding: 18px; border-radius: 12px 12px 0 0;
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+}
+.cookie-card h3 { margin: 0 0 8px; }
+.cookie-card p { margin: 0 0 12px; }
+.cookie-groups { display: grid; gap: 8px; margin: 12px 0; }
+.cookie-item { display: flex; gap: 10px; align-items: center; }
+.cookie-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.cookie-actions button {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc;
+  cursor: pointer;
+}
+.cookie-actions .primary { background: #1e40af; color: #fff; border-color: #1e40af; }
+.cookie-card a { color: #1e40af; text-decoration: underline; }
+
+
 
 /* Home.css */
 
@@ -290,22 +317,43 @@ form button:hover {
 
 footer {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  background-color: #1e293b;
+  background-color: #1e40af;
   color: white;
-  text-align: center;
-  padding: 10px 0 10px 0;
-  bottom: 0;
-  width: 100%;
+  padding: 15px 30px;
   box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
 }
 
-footer p {
+.footer-left p {
+  margin: 5px 0;
   font-size: 14px;
-  margin: 0.5rem;
 }
+
+.footer-left a {
+  color: #f6f6f7;
+  text-decoration: none;
+}
+
+.footer-left a:hover {
+  text-decoration: underline;
+}
+
+.footer-right {
+  display: flex;
+  gap: 15px;
+  font-size: 1.5rem;
+}
+
+.footer-right a {
+  color: white;
+  transition: color 0.3s;
+}
+
+.footer-right a:hover {
+  color: #60a5fa;
+}
+
 
 #services{
   background-color: var(--bg-color);
