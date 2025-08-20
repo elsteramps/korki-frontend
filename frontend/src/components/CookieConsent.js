@@ -7,6 +7,13 @@ const DEFAULT_CONSENT = {
 };
 
 export default function CookieConsent({ onChange }) {
+    useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("open-cookie-panel", handler);
+    return () => window.removeEventListener("open-cookie-panel", handler);
+    }, []);
+
+
   const [open, setOpen] = useState(false);
   const [consent, setConsent] = useState(DEFAULT_CONSENT);
 
@@ -94,3 +101,10 @@ export default function CookieConsent({ onChange }) {
     </div>
   );
 }
+
+// na końcu pliku (po eksporcie też może być)
+export function openCookiePanel() {
+  const event = new CustomEvent("open-cookie-panel");
+  window.dispatchEvent(event);
+}
+

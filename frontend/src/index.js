@@ -44,7 +44,17 @@ function App() {
       s.async = true;
       document.head.appendChild(s);
       window.__gaLoaded = true;
-    }
+    
+    s.onload = () => {
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag("js", new Date());
+      gtag("config", "G-7DVJBE9DNM"); // <-- Twoje ID
+      window.__gaLoaded = true;
+    };
+
+  }
 
     }, [consent]);
 

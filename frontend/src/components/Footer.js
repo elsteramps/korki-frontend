@@ -1,5 +1,6 @@
 import React from "react";
 import { FaInstagram, FaTiktok, FaFacebook } from "react-icons/fa";
+import { openCookiePanel } from "./CookieConsent";
 
 function Footer() {
   return (
@@ -13,6 +14,9 @@ function Footer() {
         </p>
         <p>
           <a href="/polityka-prywatnosci">Polityka prywatności</a>
+        </p>
+        <p>
+          <button className="linklike" onClick={openCookiePanel}>Ustawienia cookies</button>
         </p>
       </div>
 

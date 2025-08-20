@@ -325,6 +325,16 @@ footer {
   box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
 }
 
+.linklike { 
+  background:none; 
+  border:none; 
+  color:#e9ebee; 
+  cursor:pointer; 
+  padding:0; 
+  font:inherit; 
+}
+
+
 .footer-left p {
   margin: 5px 0;
   font-size: 14px;
