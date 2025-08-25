@@ -18,7 +18,7 @@ function Services() {
         <tbody>
           <tr>
             <td>Zajęcia dla szkół podstawowych oraz szkół średnich na poziomie podstawowym</td>
-            <td>60 minut</td>
+            <td>55 minut</td>
             <td>
               60 PLN&nbsp;
               <span style={{ textDecoration: "line-through", color: "gray" }}>80 PLN</span>*
@@ -26,7 +26,7 @@ function Services() {
           </tr>
           <tr>
             <td>Szkoła średnia (poziom rozszerzony oraz przygotowanie do matury)</td>
-            <td>60 minut</td>
+            <td>55 minut</td>
             <td>
               80 PLN&nbsp;
               <span style={{ textDecoration: "line-through", color: "gray" }}>100 PLN</span>*
@@ -34,7 +34,7 @@ function Services() {
           </tr>
           <tr>
             <td>Studenci</td>
-            <td>60 minut</td>
+            <td>55 minut</td>
             <td>
               od 100 PLN&nbsp;
               <span style={{ textDecoration: "line-through", color: "gray" }}>od 120 PLN</span>*
