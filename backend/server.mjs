@@ -142,8 +142,8 @@ if (!process.env.STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET || !TELEGRAM_TOKEN 
 
 // ====== CENNIK (grosze) — DOPASUJ DO LEGALNEJ USŁUGI EDUKACYJNEJ ======
 const PRICE_TABLE = {
-  podstawowy: { z_wyjasnieniami: 1, bez_wyjasnien: 1 }, // 40.00 / 20.00 PLN
-  rozszerzony: { z_wyjasnieniami: 1, bez_wyjasnien: 1 }, // 60.00 / 30.00 PLN
+  podstawowy: { z_wyjasnieniami: 200, bez_wyjasnien: 200 }, // 40.00 / 20.00 PLN
+  rozszerzony: { z_wyjasnieniami: 200, bez_wyjasnien: 200 }, // 60.00 / 30.00 PLN
 };
 
 // ====== PAMIĘĆ ZAMÓWIEŃ (demo) ======
