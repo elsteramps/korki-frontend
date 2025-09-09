@@ -36,12 +36,6 @@ app.use(cors({
 // npm i form-data mime-types
 // (Node 18+ ma globalny fetch; jeśli używasz starszego – doinstaluj node-fetch)
 
-import FormData from "form-data";
-import mime from "mime-types";
-import fs from "fs";
-import path from "path";
-import express from "express";
-
 // Założenia: masz już w pliku zmienne/obiekty:
 // - const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
 // - const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
