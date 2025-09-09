@@ -15,6 +15,13 @@ import crypto from "crypto";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
 
+const app = express();
+const PORT = 5000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
 
 dotenv.config();
 
@@ -43,6 +50,9 @@ for (const d of [TMP_DIR, ORDERS_DIR]) if (!fs.existsSync(d)) fs.mkdirSync(d, { 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+// Token bota Telegrama i ID czatu
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 if (!process.env.STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET || !TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
   console.warn('[WARN] Brakuje zmiennych środowiskowych (.env): STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / TELEGRAM_TOKEN / TELEGRAM_CHAT_ID');
@@ -239,6 +249,7 @@ setInterval(() => {
 }, 6 * 60 * 60 * 1000);
 
 
+
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.padEnd(32, 'x');
 const IV_LENGTH = 16;
 
@@ -320,17 +331,6 @@ function authenticateToken(req, res, next) {
 }
 
 export default authenticateToken;
-
-const app = express();
-const PORT = 5000;
-
-// Token bota Telegrama i ID czatu
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
 
 // const createGoogleMeet = async (name, date, time) => {
 //   const eventStartTime = new Date(`${date}T${time}:00`);
