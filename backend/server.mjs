@@ -19,7 +19,89 @@ const app = express();
 const PORT = 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://sorokokorki.com.pl',
+  ],
+  methods: ['GET','POST','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+}));
+
+// 3) Webhook Stripe — musi przyjmować surowe body!
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const order = ORDERS.get(session.id);
+
+    if (order && order.status !== 'paid') {
+      order.status = 'paid';
+
+      // Przenieś pliki TMP -> katalog zamówienia
+      const orderDir = path.join(ORDERS_DIR, session.id);
+      if (!fs.existsSync(orderDir)) fs.mkdirSync(orderDir, { recursive: true });
+
+      const moved = [];
+      for (const tempName of order.tempIds) {
+        const src = path.join(TMP_DIR, tempName);
+        const dest = path.join(orderDir, tempName);
+        try { fs.renameSync(src, dest); moved.push(dest); } catch (e) { console.error('Move file error:', e); }
+      }
+
+      // Wyślij powiadomienie na Telegram
+      const amount = (session.amount_total || 0) / 100;
+      const text = [
+        '✅ Nowe zamówienie (opłacone)',
+        `OrderID: ${order.orderId}`,
+        `Poziom: ${order.level}`,
+        `Wariant: ${order.variant}`,
+        `Kwota: ${amount.toFixed(2)} PLN`,
+        `👤 ${order.name}`,
+        `📧 ${order.email}`,
+        `📞 ${order.phone}`,
+        `📝 ${order.description || '-'}`,
+        `Stripe session: ${session.id}`,
+      ].join('\n');
+
+      try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+        });
+
+        // Wyślij pliki: zdjęcia jako Photo, inne jako Document
+        for (const p of moved) {
+          const ext = path.extname(p).toLowerCase();
+          const fd = new FormData();
+          fd.append('chat_id', TELEGRAM_CHAT_ID);
+          if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+            fd.append('photo', fs.createReadStream(p));
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+          } else {
+            fd.append('document', fs.createReadStream(p));
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: fd });
+          }
+        }
+      } catch (e) {
+        console.error('Telegram send error:', e);
+      }
+    }
+  }
+
+  res.json({ received: true });
+});
+
 app.use(bodyParser.json());
 
 
@@ -157,78 +239,7 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// 3) Webhook Stripe — musi przyjmować surowe body!
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const order = ORDERS.get(session.id);
-
-    if (order && order.status !== 'paid') {
-      order.status = 'paid';
-
-      // Przenieś pliki TMP -> katalog zamówienia
-      const orderDir = path.join(ORDERS_DIR, session.id);
-      if (!fs.existsSync(orderDir)) fs.mkdirSync(orderDir, { recursive: true });
-
-      const moved = [];
-      for (const tempName of order.tempIds) {
-        const src = path.join(TMP_DIR, tempName);
-        const dest = path.join(orderDir, tempName);
-        try { fs.renameSync(src, dest); moved.push(dest); } catch (e) { console.error('Move file error:', e); }
-      }
-
-      // Wyślij powiadomienie na Telegram
-      const amount = (session.amount_total || 0) / 100;
-      const text = [
-        '✅ Nowe zamówienie (opłacone)',
-        `OrderID: ${order.orderId}`,
-        `Poziom: ${order.level}`,
-        `Wariant: ${order.variant}`,
-        `Kwota: ${amount.toFixed(2)} PLN`,
-        `👤 ${order.name}`,
-        `📧 ${order.email}`,
-        `📞 ${order.phone}`,
-        `📝 ${order.description || '-'}`,
-        `Stripe session: ${session.id}`,
-      ].join('\n');
-
-      try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
-        });
-
-        // Wyślij pliki: zdjęcia jako Photo, inne jako Document
-        for (const p of moved) {
-          const ext = path.extname(p).toLowerCase();
-          const fd = new FormData();
-          fd.append('chat_id', TELEGRAM_CHAT_ID);
-          if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
-            fd.append('photo', fs.createReadStream(p));
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
-          } else {
-            fd.append('document', fs.createReadStream(p));
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: fd });
-          }
-        }
-      } catch (e) {
-        console.error('Telegram send error:', e);
-      }
-    }
-  }
-
-  res.json({ received: true });
-});
 
 // ====== Sprzątanie starych wpisów i plików TMP (co 6h) ======
 setInterval(() => {
