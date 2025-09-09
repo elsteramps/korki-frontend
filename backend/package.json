@@ -16,12 +16,18 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
+    "form-data": "^4.0.4",
+    "fs": "^0.0.1-security",
     "git-filter-repo": "^0.0.30",
     "googleapis": "^146.0.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.14.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",
-    "resend": "^4.2.0"
+    "path": "^0.12.7",
+    "resend": "^4.2.0",
+    "stripe": "^18.5.0",
+    "url": "^0.11.4"
   }
 }

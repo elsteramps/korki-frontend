@@ -1,4 +1,9 @@
 import express from "express";
+import Stripe from 'stripe';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from "cors";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
@@ -22,6 +27,217 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+
+// server.js — Express + Stripe Checkout + Telegram, upload temp -> notify after payment
+// Wymagania: Node 18+, npm i express multer stripe form-data dotenv
+// .env: STRIPE_SECRET_KEY=...\nSTRIPE_WEBHOOK_SECRET=...\nTELEGRAM_TOKEN=...\nTELEGRAM_CHAT_ID=...\nBASE_URL=https://twoj-front.pl
+
+// ====== ŚCIEŻKI ======
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const TMP_DIR = path.join(__dirname, 'uploads_tmp');
+const ORDERS_DIR = path.join(__dirname, 'uploads_orders');
+for (const d of [TMP_DIR, ORDERS_DIR]) if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+
+// ====== KONFIG ======
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+
+if (!process.env.STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET || !TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
+  console.warn('[WARN] Brakuje zmiennych środowiskowych (.env): STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / TELEGRAM_TOKEN / TELEGRAM_CHAT_ID');
+}
+
+// ====== CENNIK (grosze) — DOPASUJ DO LEGALNEJ USŁUGI EDUKACYJNEJ ======
+const PRICE_TABLE = {
+  podstawowy: { z_wyjasnieniami: 4000, bez_wyjasnien: 2000 }, // 40.00 / 20.00 PLN
+  rozszerzony: { z_wyjasnieniami: 6000, bez_wyjasnien: 3000 }, // 60.00 / 30.00 PLN
+};
+
+// ====== PAMIĘĆ ZAMÓWIEŃ (demo) ======
+// Klucz: sessionId (Stripe) -> order
+const ORDERS = new Map();
+
+// ====== MULTER (upload do TMP) ======
+const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'
+]);
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, TMP_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext).replace(/[^a-z0-9_-]/gi, '_');
+    cb(null, `${Date.now()}_${base}_${crypto.randomUUID()}${ext}`);
+  }
+});
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME.has(file.mimetype)) cb(null, true); else cb(new Error('Niedozwolony typ pliku'));
+  },
+  limits: { fileSize: 20 * 1024 * 1024, files: 10 }, // 20MB, max 10 plików
+});
+
+// JSON dla zwykłych endpointów (NIE dla webhooka Stripe)
+app.use('/api', express.json({ limit: '2mb' }));
+
+// Zdrowie
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+// 1) Upload do bufora (TMP) — żadnych powiadomień przed płatnością
+app.post('/api/uploads/temp', upload.array('files', 10), (req, res) => {
+  const files = req.files || [];
+  if (!files.length) return res.status(400).json({ error: 'Brak plików' });
+  const tempIds = files.map(f => f.filename);
+  return res.json({ tempIds });
+});
+
+// 2) Utwórz zamówienie + Checkout Session
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { level, variant, name, email, phone, description, tempIds } = req.body || {};
+    if (!PRICE_TABLE[level]?.[variant]) return res.status(400).json({ error: 'Nieprawidłowy wariant' });
+    if (!name || !email || !phone) return res.status(400).json({ error: 'Brak danych kontaktowych' });
+    if (!Array.isArray(tempIds) || tempIds.length === 0) return res.status(400).json({ error: 'Brak plików' });
+
+    // Wygeneruj wewnętrzne ID zamówienia
+    const orderId = crypto.randomUUID();
+    const amount = PRICE_TABLE[level][variant];
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      currency: 'pln',
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'pln',
+          unit_amount: amount,
+          product_data: {
+            name: `Usługa asynchroniczna – ${level}/${variant}`,
+            description: 'Edukacyjna usługa asynchroniczna: sprawdzenie/wyjaśnienie materiałów (do 12h).'
+          }
+        }
+      }],
+      customer_creation: 'always',
+      phone_number_collection: { enabled: true },
+      success_url: `${BASE_URL}/upload-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/?status=cancelled`,
+      metadata: { level, variant, orderId }
+    });
+
+    // Zachowaj dane zamówienia do wykorzystania po płatności
+    ORDERS.set(session.id, {
+      sessionId: session.id,
+      orderId,
+      level,
+      variant,
+      name,
+      email,
+      phone,
+      description: description || '',
+      tempIds,
+      status: 'pending',
+      createdAt: Date.now(),
+    });
+
+    res.json({ checkoutUrl: session.url });
+  } catch (err) {
+    console.error('/api/orders error', err);
+    res.status(500).json({ error: 'Błąd tworzenia płatności' });
+  }
+});
+
+// 3) Webhook Stripe — musi przyjmować surowe body!
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const order = ORDERS.get(session.id);
+
+    if (order && order.status !== 'paid') {
+      order.status = 'paid';
+
+      // Przenieś pliki TMP -> katalog zamówienia
+      const orderDir = path.join(ORDERS_DIR, session.id);
+      if (!fs.existsSync(orderDir)) fs.mkdirSync(orderDir, { recursive: true });
+
+      const moved = [];
+      for (const tempName of order.tempIds) {
+        const src = path.join(TMP_DIR, tempName);
+        const dest = path.join(orderDir, tempName);
+        try { fs.renameSync(src, dest); moved.push(dest); } catch (e) { console.error('Move file error:', e); }
+      }
+
+      // Wyślij powiadomienie na Telegram
+      const amount = (session.amount_total || 0) / 100;
+      const text = [
+        '✅ Nowe zamówienie (opłacone)',
+        `OrderID: ${order.orderId}`,
+        `Poziom: ${order.level}`,
+        `Wariant: ${order.variant}`,
+        `Kwota: ${amount.toFixed(2)} PLN`,
+        `👤 ${order.name}`,
+        `📧 ${order.email}`,
+        `📞 ${order.phone}`,
+        `📝 ${order.description || '-'}`,
+        `Stripe session: ${session.id}`,
+      ].join('\n');
+
+      try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+        });
+
+        // Wyślij pliki: zdjęcia jako Photo, inne jako Document
+        for (const p of moved) {
+          const ext = path.extname(p).toLowerCase();
+          const fd = new FormData();
+          fd.append('chat_id', TELEGRAM_CHAT_ID);
+          if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+            fd.append('photo', fs.createReadStream(p));
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+          } else {
+            fd.append('document', fs.createReadStream(p));
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: fd });
+          }
+        }
+      } catch (e) {
+        console.error('Telegram send error:', e);
+      }
+    }
+  }
+
+  res.json({ received: true });
+});
+
+// ====== Sprzątanie starych wpisów i plików TMP (co 6h) ======
+setInterval(() => {
+  const now = Date.now();
+  const TTL_MS = 24 * 60 * 60 * 1000; // 24h
+  // Usuń pending >24h
+  for (const [sid, o] of ORDERS.entries()) {
+    if (o.status === 'pending' && now - o.createdAt > TTL_MS) ORDERS.delete(sid);
+  }
+  // Usuń pliki w TMP starsze niż 24h
+  for (const name of fs.readdirSync(TMP_DIR)) {
+    const p = path.join(TMP_DIR, name);
+    try {
+      const st = fs.statSync(p);
+      if (now - st.mtimeMs > TTL_MS) fs.unlinkSync(p);
+    } catch {}
+  }
+}, 6 * 60 * 60 * 1000);
+
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.padEnd(32, 'x');
 const IV_LENGTH = 16;
