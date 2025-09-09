@@ -12,6 +12,8 @@ import jwt from "jsonwebtoken";
 import { Resend } from "resend";
 import mysql from "mysql2/promise";
 import crypto from "crypto";
+import FormData from "form-data";
+import mime from "mime-types";
 
 const SECRET_KEY = "your-secret-key"; // Upewnij się, że jest taki sam, jak przy generowaniu tokenów
 
@@ -30,39 +32,74 @@ app.use(cors({
 }));
 
 // 3) Webhook Stripe — musi przyjmować surowe body!
-app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+// Wymagane paczki:
+// npm i form-data mime-types
+// (Node 18+ ma globalny fetch; jeśli używasz starszego – doinstaluj node-fetch)
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const order = ORDERS.get(session.id);
+import FormData from "form-data";
+import mime from "mime-types";
+import fs from "fs";
+import path from "path";
+import express from "express";
 
-    if (order && order.status !== 'paid') {
-      order.status = 'paid';
+// Założenia: masz już w pliku zmienne/obiekty:
+// - const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
+// - const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
+// - const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
+// - const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID
+// - const TMP_DIR = ...; const ORDERS_DIR = ...;
+// - const ORDERS = new Map(); // sessionId -> { tempIds, name, email, phone, level, variant, ... }
+// UWAGA NA KOLEJNOŚĆ MIDDLEWARE: ten endpoint MUSI być zdefiniowany PRZED app.use('/api', express.json(...))
 
-      // Przenieś pliki TMP -> katalog zamówienia
+
+  // surowe body – wymagane do weryfikacji podpisu
+  app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+    console.log("[WEBHOOK] hit", new Date().toISOString());
+    const sig = req.headers["stripe-signature"];    
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+      console.error("[WEBHOOK] signature error:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    console.log("[WEBHOOK] event:", event.type, event.id);
+
+    // Interesują nas potwierdzenia płatności
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+      const session = event.data.object;
+      const order = ORDERS.get(session.id);
+
+      if (!order) {
+        console.warn("[WEBHOOK] no order for session", session.id);
+        return res.json({ received: true });
+      }
+
+      if (order.status === "paid" && order.notified) {
+        console.log("[WEBHOOK] duplicate event, already processed", session.id);
+        return res.json({ received: true });
+      }
+
+      order.status = "paid";
+
+      // 1) Przenieś pliki z TMP do katalogu zamówienia
       const orderDir = path.join(ORDERS_DIR, session.id);
       if (!fs.existsSync(orderDir)) fs.mkdirSync(orderDir, { recursive: true });
 
-      const moved = [];
-      for (const tempName of order.tempIds) {
+      const movedPaths = [];
+      for (const tempName of order.tempIds || []) {
         const src = path.join(TMP_DIR, tempName);
         const dest = path.join(orderDir, tempName);
-        try { fs.renameSync(src, dest); moved.push(dest); } catch (e) { console.error('Move file error:', e); }
+        try { fs.renameSync(src, dest); movedPaths.push(dest); }
+        catch (e) { console.error("[WEBHOOK] move file error:", e.message); }
       }
+      console.log("[WEBHOOK] movedPaths:", movedPaths);
 
-      // Wyślij powiadomienie na Telegram
+      // 2) Wyślij notyfikację tekstową do Telegrama
       const amount = (session.amount_total || 0) / 100;
       const text = [
-        '✅ Nowe zamówienie (opłacone)',
-        `OrderID: ${order.orderId}`,
+        "✅ Nowe zamówienie (opłacone)",
         `Poziom: ${order.level}`,
         `Wariant: ${order.variant}`,
         `Kwota: ${amount.toFixed(2)} PLN`,
@@ -70,37 +107,76 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
         `📧 ${order.email}`,
         `📞 ${order.phone}`,
         `📝 ${order.description || '-'}`,
-        `Stripe session: ${session.id}`,
-      ].join('\n');
+        `Session: ${session.id}`,
+      ].join("\n");
 
       try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
         });
-
-        // Wyślij pliki: zdjęcia jako Photo, inne jako Document
-        for (const p of moved) {
-          const ext = path.extname(p).toLowerCase();
-          const fd = new FormData();
-          fd.append('chat_id', TELEGRAM_CHAT_ID);
-          if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
-            fd.append('photo', fs.createReadStream(p));
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
-          } else {
-            fd.append('document', fs.createReadStream(p));
-            await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: fd });
-          }
-        }
+        const j = await resp.json().catch(() => ({}));
+        if (!resp.ok || j?.ok === false) console.error("[Telegram] sendMessage error:", resp.status, j);
+        else console.log("[Telegram] message sent");
       } catch (e) {
-        console.error('Telegram send error:', e);
+        console.error("[Telegram] sendMessage exception:", e);
       }
-    }
-  }
 
-  res.json({ received: true });
-});
+      // 3) Wyślij załączniki (obrazy jako Photo; fallback do Document). Inne jako Document.
+      async function tgPost(url, fd) {
+        const resp = await fetch(url, { method: "POST", body: fd });
+        const text = await resp.text();
+        let parsed; try { parsed = JSON.parse(text); } catch { parsed = { raw: text }; }
+        if (!resp.ok || parsed?.ok === false) {
+          console.error("[Telegram]", url, "status:", resp.status, "resp:", parsed);
+          return false;
+        }
+        return true;
+      }
+
+      for (const p of movedPaths) {
+        try {
+          const ext = path.extname(p).toLowerCase();
+          const isImage = [".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(ext);
+          const filename = path.basename(p);
+          const contentType = mime.lookup(p) || "application/octet-stream";
+
+          if (isImage) {
+            // najpierw spróbuj jako PHOTO
+            const fd1 = new FormData();
+            fd1.append("chat_id", TELEGRAM_CHAT_ID);
+            fd1.append("photo", fs.createReadStream(p), { filename, contentType });
+            const ok = await tgPost(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, fd1);
+            if (!ok) {
+              const fd2 = new FormData();
+              fd2.append("chat_id", TELEGRAM_CHAT_ID);
+              fd2.append("document", fs.createReadStream(p), { filename, contentType });
+              await tgPost(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, fd2);
+            }
+          } else {
+            // inne pliki jako DOCUMENT
+            const fd = new FormData();
+            fd.append("chat_id", TELEGRAM_CHAT_ID);
+            fd.append("document", fs.createReadStream(p), { filename, contentType });
+            await tgPost(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, fd);
+          }
+        } catch (e) {
+          console.error("[Telegram] attach exception:", e);
+        }
+      }
+
+      order.notified = true; // prosta idempotencja dla ponownych webhooków
+    }
+
+    // Zawsze odpowiadamy 200/JSON, żeby Stripe nie retryował bez potrzeby
+    res.json({ received: true });
+  });
+
+// Użycie w server.mjs:
+// import { registerStripeWebhook } from './webhook.js' (jeśli wydzielisz)
+// registerStripeWebhook(app, stripe, STRIPE_WEBHOOK_SECRET, { TMP_DIR, ORDERS_DIR, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, ORDERS });
+
 
 app.use(bodyParser.json());
 
