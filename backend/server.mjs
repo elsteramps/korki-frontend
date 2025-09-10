@@ -160,6 +160,82 @@ app.use(cors({
         }
       }
 
+      try {
+  // nie wysyłaj ponownie, jeśli webhook się powtarza
+  if (!order.emailed) {
+    const toEmail =
+      order.email ||
+      session?.customer_details?.email ||
+      ""; // jeśli pusto – nie wysyłamy
+
+    if (toEmail) {
+      const amount = (session.amount_total || 0) / 100;
+      const friendlyLevel = order.level === "podstawowy" ? "Poziom podstawowy" : "Poziom rozszerzony";
+      const friendlyVariant =
+        order.variant === "z_wyjasnieniami"
+          ? "Z wyjaśnieniami i pełnym omówieniem"
+          : "Bez wyjaśnień (same odpowiedzi)";
+
+      const subject = `Potwierdzenie zamówienia – SorokoKorki (${friendlyLevel}, ${friendlyVariant})`;
+      const html = `
+        <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.5;color:#111827">
+          <h2 style="margin:0 0 8px">Dziękujemy za zamówienie!</h2>
+          <p style="margin:0 0 12px">Otrzymaliśmy Twoją płatność. Zlecenie zostało przyjęte do realizacji.</p>
+
+          <div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:12px;margin:12px 0">
+            <div><strong>Poziom:</strong> ${friendlyLevel}</div>
+            <div><strong>Wariant:</strong> ${friendlyVariant}</div>
+            <div><strong>Kwota:</strong> ${amount.toFixed(2)} PLN</div>
+            ${order.description ? `<div><strong>Opis:</strong> ${order.description}</div>` : ""}
+            <div><strong>Identyfikator płatności:</strong> ${session.id}</div>
+          </div>
+
+          <p style="margin:12px 0">Materiały prześlemy na ten adres e-mail. Szacowany czas realizacji: do 12 godzin.</p>
+          <p style="margin:12px 0;color:#6B7280">Jeżeli masz dodatkowe informacje lub pytania, po prostu odpowiedz na tę wiadomość lub napisz na <a href="mailto:kontakt@sorokokorki.com.pl">kontakt@sorokokorki.com.pl</a>.</p>
+
+          <p style="margin:16px 0">
+            <a href="https://sorokokorki.com.pl" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:600">Przejdź na stronę główną</a>
+          </p>
+
+          <p style="margin:12px 0;color:#6B7280;font-size:12px">Ta usługa ma charakter edukacyjny (sprawdzenie/wyjaśnienie rozwiązań).</p>
+        </div>
+      `;
+
+      const text = [
+        "Dziękujemy za zamówienie!",
+        "Otrzymaliśmy Twoją płatność. Zlecenie zostało przyjęte do realizacji.",
+        `Poziom: ${friendlyLevel}`,
+        `Wariant: ${friendlyVariant}`,
+        `Kwota: ${amount.toFixed(2)} PLN`,
+        order.description ? `Opis: ${order.description}` : "",
+        `Session: ${session.id}`,
+        "Materiały prześlemy na ten adres e-mail. Szacowany czas realizacji: do 12 godzin.",
+        "W razie pytań: kontakt@sorokokorki.com.pl",
+      ].filter(Boolean).join("\n");
+
+      const sendRes = await new Resend(process.env.RESEND_API_KEY).emails.send({
+        from: process.env.EMAIL_FROM,
+        to: [toEmail],
+        subject,
+        html,
+        text,
+      });
+
+      if (sendRes?.error) {
+        console.error("[Resend] send error:", sendRes.error);
+      } else {
+        console.log("[Resend] email sent:", sendRes?.data?.id || "(no id)");
+        order.emailed = true; // flaga idempotencji
+      }
+    } else {
+      console.warn("[Resend] brak e-maila w zamówieniu – pomijam wysyłkę");
+    }
+  }
+} catch (e) {
+  console.error("[Resend] exception:", e);
+}
+
+
       order.notified = true; // prosta idempotencja dla ponownych webhooków
     }
 
@@ -282,7 +358,7 @@ app.post('/api/orders', async (req, res) => {
       }],
       customer_creation: 'always',
       phone_number_collection: { enabled: true },
-      success_url: `${BASE_URL}/upload-success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${BASE_URL}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/?status=cancelled`,
       metadata: { level, variant, orderId }
     });
@@ -307,6 +383,21 @@ app.post('/api/orders', async (req, res) => {
     console.error('/api/orders error', err);
     res.status(500).json({ error: 'Błąd tworzenia płatności' });
   }
+});
+
+// publiczny, tylko do odczytu podstawowych danych zamówienia
+app.get('/api/orders/:sessionId/summary', (req, res) => {
+  const { sessionId } = req.params;
+  const order = ORDERS.get(sessionId); // zapisywaliśmy przy tworzeniu sesji
+  if (!order) return res.status(404).json({ error: 'Not found' });
+  res.json({
+    sessionId: order.sessionId,
+    status: order.status,       // 'pending' lub 'paid'
+    email: order.email,
+    name: order.name,
+    level: order.level,
+    variant: order.variant,
+  });
 });
 
 
@@ -350,6 +441,7 @@ const decrypt = (data) => {
   decrypted += decipher.final("utf8");
   return decrypted;
 };
+const newLocal = new Resend(process.env.RESEND_API_KEY);
 // const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 // const credentials = JSON.parse(fs.readFileSync("soy-reporter-341221-68f28652be33.json", "utf-8"));
 
@@ -362,11 +454,11 @@ const decrypt = (data) => {
 
 // const calendar = google.calendar({ version: "v3", auth });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 const sendConfirmationEmail = async (to, name, date, time) => {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
       from: process.env.EMAIL_FROM,
       to,
       subject: "Potwierdzenie rezerwacji lekcji",
