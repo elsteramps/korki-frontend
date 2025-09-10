@@ -358,7 +358,7 @@ app.post('/api/orders', async (req, res) => {
       }],
       customer_creation: 'always',
       phone_number_collection: { enabled: true },
-      success_url: `${BASE_URL}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${BASE_URL}/thankyou?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/?status=cancelled`,
       metadata: { level, variant, orderId }
     });
